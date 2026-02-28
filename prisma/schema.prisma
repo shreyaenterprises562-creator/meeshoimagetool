@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/* ===================================================== */
+/* ✅ USER MODEL (AUTH + PREMIUM + CREDITS + ADS + MEESHO + PAYMENTS) */
+/* ===================================================== */
+
+model User {
+  id              String   @id @default(uuid())
+
+  /* ================= LOGIN ================= */
+
+  email           String   @unique
+  password        String?
+  role            String?
+
+  /* ================= PREMIUM SYSTEM ================= */
+
+  isPremium       Boolean  @default(false)
+
+  // weekly | monthly | yearly | lifetime
+  premiumPlan     String?
+
+  // Lifetime plan → NULL रहेगा
+  premiumUntil    DateTime?
+
+  /* ================= CREDIT SYSTEM ================= */
+
+  credits         Int      @default(1)
+
+  // Daily reward ads limit
+  adsWatched      Int      @default(0)
+
+  // Track daily free usage reset
+  lastUsedAt      DateTime?
+
+  /* ================= MEESHO CONNECT ================= */
+
+  meeshoConnected Boolean  @default(false)
+  meeshoCookies   Json?
+
+  /* ================= META ================= */
+
+  createdAt       DateTime @default(now())
+
+  /* ================= RELATIONS ================= */
+
+  jobs            ImageJob[]
+  payments        Payment[]
+}
+
+/* ===================================================== */
+/* ✅ PAYMENT MODEL (RAZORPAY + CREDIT SYSTEM) */
+/* ===================================================== */
+
+model Payment {
+  id                  String   @id @default(uuid())
+
+  userId              String
+  razorpayOrderId     String   @unique
+  razorpayPaymentId   String?  @unique
+  amount              Int      // Amount in paise
+  currency            String   @default("INR")
+
+  // created | paid | failed
+  status              String   @default("created")
+
+  // credits | premium
+  type                String
+
+  // weekly | monthly | yearly | lifetime | credit_pack_name
+  plan                String?
+
+  creditsAdded        Int?
+
+  createdAt           DateTime @default(now())
+
+  /* ================= RELATION ================= */
+
+  user                User     @relation(fields: [userId], references: [id])
+}
+
+/* ===================================================== */
+/* ✅ IMAGE JOB MODEL (UPLOAD SESSION) */
+/* ===================================================== */
+
+model ImageJob {
+  id         String   @id @default(uuid())
+
+  userId     String
+  baseImage  String
+
+  category   String
+  price      Int
+
+  createdAt  DateTime @default(now())
+
+  /* ================= RELATIONS ================= */
+
+  user       User     @relation(fields: [userId], references: [id])
+  variants   Variant[]
+}
+
+/* ===================================================== */
+/* ✅ VARIANT MODEL (OUTPUT IMAGES) */
+/* ===================================================== */
+
+model Variant {
+  id        String   @id @default(uuid())
+
+  jobId     String
+  imagePath String
+
+  shipping  Float
+  gst       Float
+  total     Float
+
+  isBest    Boolean  @default(false)
+
+  /* ================= RELATION ================= */
+
+  job       ImageJob @relation(fields: [jobId], references: [id])
+}
