@@ -1,50 +1,70 @@
-import { prisma } from "@/lib/db";
-import bcrypt from "bcrypt";
-import { signToken } from "@/lib/auth";
+import { prisma } from "@/lib/db"
+import bcrypt from "bcryptjs"
+import { signToken } from "@/lib/auth"
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { email, password } = body as {
-      email?: string;
-      password?: string;
-    };
+    const body = await req.json()
 
-    // basic validation
+    const email = body.email?.toLowerCase().trim()
+    const password = body.password?.trim()
+
+    /* ===================================================== */
+    /* ✅ BASIC VALIDATION */
+    /* ===================================================== */
+
     if (!email || !password) {
       return Response.json(
         { error: "Email and password are required" },
         { status: 400 }
-      );
+      )
     }
+
+    /* ===================================================== */
+    /* ✅ FIND USER */
+    /* ===================================================== */
 
     const user = await prisma.user.findUnique({
       where: { email },
-    });
+    })
 
-    // user not found OR password null
     if (!user || !user.password) {
       return Response.json(
         { error: "Invalid credentials" },
         { status: 401 }
-      );
+      )
     }
 
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) {
+    /* ===================================================== */
+    /* ✅ PASSWORD CHECK */
+    /* ===================================================== */
+
+    const isValid = await bcrypt.compare(password, user.password)
+
+    if (!isValid) {
       return Response.json(
         { error: "Invalid credentials" },
         { status: 401 }
-      );
+      )
     }
 
-    const token = signToken(user.id);
-    return Response.json({ token });
+    /* ===================================================== */
+    /* ✅ SIGN JWT */
+    /* ===================================================== */
+
+    const token = signToken(user.id)
+
+    return Response.json({
+      success: true,
+      token,
+    })
+
   } catch (error) {
-    console.error("LOGIN_ERROR", error);
+    console.error("LOGIN_ERROR:", error)
+
     return Response.json(
-      { error: "Something went wrong" },
+      { error: "Login failed. Try again." },
       { status: 500 }
-    );
+    )
   }
 }
