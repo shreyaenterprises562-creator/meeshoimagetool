@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
-
 import { chromium } from "playwright";
 
 export async function POST(req: Request) {
+  let browser;
+
   try {
     /* ===================================================== */
     /* ✅ JWT AUTH */
@@ -35,8 +36,8 @@ export async function POST(req: Request) {
 
     console.log("🚀 Opening Meesho Login...");
 
-    const browser = await chromium.launch({
-      headless: false, // user manually login करेगा
+    browser = await chromium.launch({
+      headless: false, // Manual login required
     });
 
     const page = await browser.newPage();
@@ -47,9 +48,9 @@ export async function POST(req: Request) {
 
     console.log("✅ Please login manually in opened browser...");
 
-    // Wait until login happens (URL changes)
+    // Wait for dashboard after login
     await page.waitForURL("**/dashboard**", {
-      timeout: 120000, // 2 मिनट login time
+      timeout: 120000,
     });
 
     console.log("🎉 Login Successful, extracting cookies...");
@@ -59,14 +60,14 @@ export async function POST(req: Request) {
     await browser.close();
 
     /* ===================================================== */
-    /* ✅ SAVE COOKIES IN DB */
+    /* ✅ SAVE COOKIES IN DB (FIXED JSON TYPE) */
     /* ===================================================== */
 
     await prisma.user.update({
       where: { id: userId },
       data: {
         meeshoConnected: true,
-        meeshoCookies: cookies,
+        meeshoCookies: JSON.parse(JSON.stringify(cookies)), // ✅ FIXED
       },
     });
 
@@ -74,8 +75,13 @@ export async function POST(req: Request) {
       success: true,
       message: "✅ Meesho Connected Successfully!",
     });
+
   } catch (error) {
     console.error("MEESHO_CONNECT_ERROR", error);
+
+    if (browser) {
+      await browser.close();
+    }
 
     return NextResponse.json(
       {

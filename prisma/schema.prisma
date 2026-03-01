@@ -8,7 +8,7 @@ datasource db {
 }
 
 /* ===================================================== */
-/* ✅ USER MODEL (AUTH + PREMIUM + CREDITS + ADS + MEESHO + PAYMENTS) */
+/* ✅ USER MODEL */
 /* ===================================================== */
 
 model User {
@@ -18,26 +18,23 @@ model User {
 
   email           String   @unique
   password        String?
-  role            String?
+  role            String?   @default("user")
 
   /* ================= PREMIUM SYSTEM ================= */
 
   isPremium       Boolean  @default(false)
-
-  // weekly | monthly | yearly | lifetime
   premiumPlan     String?
-
-  // Lifetime plan → NULL रहेगा
   premiumUntil    DateTime?
 
   /* ================= CREDIT SYSTEM ================= */
 
-  credits         Int      @default(1)
+  // Paid credits + remaining daily credits
+  credits         Int      @default(0)
 
-  // Daily reward ads limit
+  // Max 2 reward ads per day
   adsWatched      Int      @default(0)
 
-  // Track daily free usage reset
+  // Track daily reset
   lastUsedAt      DateTime?
 
   /* ================= MEESHO CONNECT ================= */
@@ -48,6 +45,7 @@ model User {
   /* ================= META ================= */
 
   createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   /* ================= RELATIONS ================= */
 
@@ -56,7 +54,7 @@ model User {
 }
 
 /* ===================================================== */
-/* ✅ PAYMENT MODEL (RAZORPAY + CREDIT SYSTEM) */
+/* ✅ PAYMENT MODEL */
 /* ===================================================== */
 
 model Payment {
@@ -65,16 +63,17 @@ model Payment {
   userId              String
   razorpayOrderId     String   @unique
   razorpayPaymentId   String?  @unique
-  amount              Int      // Amount in paise
+
+  amount              Int
   currency            String   @default("INR")
 
   // created | paid | failed
   status              String   @default("created")
 
-  // credits | premium
+  // premium | credits
   type                String
 
-  // weekly | monthly | yearly | lifetime | credit_pack_name
+  // weekly | monthly | yearly | lifetime | credit_pack
   plan                String?
 
   creditsAdded        Int?
@@ -83,11 +82,11 @@ model Payment {
 
   /* ================= RELATION ================= */
 
-  user                User     @relation(fields: [userId], references: [id])
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 /* ===================================================== */
-/* ✅ IMAGE JOB MODEL (UPLOAD SESSION) */
+/* ✅ IMAGE JOB MODEL */
 /* ===================================================== */
 
 model ImageJob {
@@ -101,14 +100,12 @@ model ImageJob {
 
   createdAt  DateTime @default(now())
 
-  /* ================= RELATIONS ================= */
-
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   variants   Variant[]
 }
 
 /* ===================================================== */
-/* ✅ VARIANT MODEL (OUTPUT IMAGES) */
+/* ✅ VARIANT MODEL */
 /* ===================================================== */
 
 model Variant {
@@ -123,7 +120,5 @@ model Variant {
 
   isBest    Boolean  @default(false)
 
-  /* ================= RELATION ================= */
-
-  job       ImageJob @relation(fields: [jobId], references: [id])
+  job       ImageJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
