@@ -8,7 +8,15 @@ export async function POST(req: Request) {
 
   try {
     /* ===================================================== */
-    /* ✅ JWT AUTH */
+    /* REQUEST BODY */
+    /* ===================================================== */
+
+    const body = await req.json();
+    const phone = body?.phone;
+    const otp = body?.otp;
+
+    /* ===================================================== */
+    /* JWT AUTH */
     /* ===================================================== */
 
     const authHeader = req.headers.get("authorization");
@@ -31,53 +39,108 @@ export async function POST(req: Request) {
     }
 
     /* ===================================================== */
-    /* ✅ PLAYWRIGHT LOGIN */
+    /* START PLAYWRIGHT */
     /* ===================================================== */
 
-    console.log("🚀 Opening Meesho Login...");
-
     browser = await chromium.launch({
-      headless: false, // Manual login required
+      executablePath: "/usr/bin/chromium",
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox"
+      ]
     });
 
-    const page = await browser.newPage();
+    const context = await browser.newContext();
+    const page = await context.newPage();
 
     await page.goto("https://supplier.meesho.com/", {
-      waitUntil: "domcontentloaded",
+      waitUntil: "domcontentloaded"
     });
 
-    console.log("✅ Please login manually in opened browser...");
+    /* ===================================================== */
+    /* PHONE STEP (SEND OTP) */
+    /* ===================================================== */
 
-    // Wait for dashboard after login
+    if (phone && !otp) {
+      console.log("📱 Sending OTP...");
+
+      await page.fill('input[type="tel"]', phone);
+      await page.click('button:has-text("Send OTP")');
+
+      await browser.close();
+
+      return NextResponse.json({
+        success: true,
+        step: "OTP_SENT",
+        message: "OTP sent to phone"
+      });
+    }
+
+    /* ===================================================== */
+    /* OTP VERIFY */
+    /* ===================================================== */
+
+    if (phone && otp) {
+      console.log("🔐 Verifying OTP...");
+
+      await page.fill('input[type="tel"]', phone);
+      await page.click('button:has-text("Send OTP")');
+
+      await page.fill('input[type="number"]', otp);
+      await page.click('button:has-text("Verify")');
+    }
+
+    /* ===================================================== */
+    /* WAIT FOR DASHBOARD */
+    /* ===================================================== */
+
     await page.waitForURL("**/dashboard**", {
-      timeout: 120000,
+      timeout: 60000
     });
 
-    console.log("🎉 Login Successful, extracting cookies...");
+    console.log("🎉 Login successful");
 
-    const cookies = await page.context().cookies();
+    /* ===================================================== */
+    /* SAFE COOKIE SAVE (FIXED VERSION) */
+    /* ===================================================== */
+
+    const rawCookies = await context.cookies();
+
+    const cookies = rawCookies.map((c) => ({
+      name: c.name,
+      value: c.value,
+      domain: c.domain,
+      path: c.path,
+      expires: c.expires ?? -1,
+      httpOnly: c.httpOnly ?? false,
+      secure: c.secure ?? false,
+      sameSite: c.sameSite ?? "Lax"
+    }));
 
     await browser.close();
 
     /* ===================================================== */
-    /* ✅ SAVE COOKIES IN DB (FIXED JSON TYPE) */
+    /* SAVE IN DATABASE */
     /* ===================================================== */
 
     await prisma.user.update({
       where: { id: userId },
       data: {
         meeshoConnected: true,
-        meeshoCookies: JSON.parse(JSON.stringify(cookies)), // ✅ FIXED
-      },
+        meeshoCookies: cookies,
+        meeshoLoginAt: new Date()
+      }
     });
 
     return NextResponse.json({
       success: true,
-      message: "✅ Meesho Connected Successfully!",
+      message: "Meesho Connected Successfully"
     });
 
   } catch (error) {
-    console.error("MEESHO_CONNECT_ERROR", error);
+
+    console.error("MEESHO_CONNECT_ERROR:", error);
 
     if (browser) {
       await browser.close();
@@ -86,7 +149,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to connect Meesho",
+        error: "Failed to connect Meesho"
       },
       { status: 500 }
     );

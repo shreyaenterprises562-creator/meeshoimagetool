@@ -40,7 +40,18 @@ model User {
   /* ================= MEESHO CONNECT ================= */
 
   meeshoConnected Boolean  @default(false)
+
+  // email used for meesho login
+  meeshoEmail     String?
+
+  // encrypted password
+  meeshoPassword  String?
+
+  // saved session cookies
   meeshoCookies   Json?
+
+  // last login time
+  meeshoLoginAt   DateTime?
 
   /* ================= META ================= */
 
