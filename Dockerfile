@@ -29,7 +29,7 @@ RUN pip3 install --no-cache-dir rembg pillow --break-system-packages
 # copy package
 COPY package*.json ./
 
-RUN npm install --omit=dev
+RUN npm install
 
 # copy prisma
 COPY prisma ./prisma
