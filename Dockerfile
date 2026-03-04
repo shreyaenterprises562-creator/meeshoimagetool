@@ -3,19 +3,26 @@ FROM node:22-slim AS builder
 
 WORKDIR /app
 
+# install dependencies
 COPY package*.json ./
 RUN npm install
 
+# copy project
 COPY . .
 
+# generate prisma client
+RUN npx prisma generate
+
+# build nextjs
 RUN npm run build
+
 
 # ---------- PRODUCTION STAGE ----------
 FROM node:22-slim
 
 WORKDIR /app
 
-# Install minimal deps for playwright + python
+# Install minimal deps for chromium + python
 RUN apt-get update && apt-get install -y \
 python3 \
 python3-pip \
@@ -27,13 +34,14 @@ chromium \
 # install python libs
 RUN pip3 install --no-cache-dir rembg pillow --break-system-packages
 
-# copy only needed files
+# copy only required build files
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 
+# environment
 ENV NODE_ENV=production
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
