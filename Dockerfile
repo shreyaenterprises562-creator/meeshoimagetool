@@ -11,9 +11,13 @@ WORKDIR /app
 
 # Copy package files first
 COPY package*.json ./
+COPY prisma ./prisma
 
 # Install Node dependencies
 RUN npm install
+
+# 🔥 Generate Prisma Client
+RUN npx prisma generate
 
 # Install Playwright browsers
 RUN npx playwright install --with-deps
