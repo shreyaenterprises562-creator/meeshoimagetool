@@ -34,12 +34,15 @@ chromium \
 # install python libs
 RUN pip3 install --no-cache-dir rembg pillow --break-system-packages
 
-# copy only required build files
+# copy build output
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
+
+# 🔴 IMPORTANT (worker files)
+COPY --from=builder /app/server ./server
 
 # environment
 ENV NODE_ENV=production
