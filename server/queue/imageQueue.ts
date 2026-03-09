@@ -1,7 +1,10 @@
-import { Queue } from "bullmq";
+import { Queue } from "bullmq"
 
 export const imageQueue = new Queue("image-processing", {
   connection: {
-    url: process.env.REDIS_URL as string,
-  },
-});
+    host: process.env.REDIS_HOST,
+    port: Number(process.env.REDIS_PORT),
+    password: process.env.REDIS_PASSWORD,
+    tls: {}
+  }
+})

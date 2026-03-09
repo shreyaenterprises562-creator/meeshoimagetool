@@ -1,40 +1,39 @@
-import { Worker } from "bullmq";
+import "dotenv/config"
+import { Worker } from "bullmq"
 
-if (!process.env.REDIS_URL) {
-  console.log("Redis not available. Worker not started.");
-} else {
-
-  const worker = new Worker(
-    "image-processing",
-    async (job) => {
-
-      const { image } = job.data;
-
-      console.log("Processing image:", image);
-
-      // Future processing yaha add kar sakte ho:
-      // remove_bg.py
-      // resize
-      // catalog variants
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      return { success: true };
-
-    },
-    {
-      connection: {
-        url: process.env.REDIS_URL,
-      },
-    }
-  );
-
-  worker.on("completed", (job) => {
-    console.log(`Job ${job.id} completed`);
-  });
-
-  worker.on("failed", (job, err) => {
-    console.log(`Job ${job?.id} failed`, err);
-  });
-
+const connection = {
+  host: process.env.REDIS_HOST,
+  port: Number(process.env.REDIS_PORT),
+  password: process.env.REDIS_PASSWORD
 }
+
+console.log("Starting Image Worker...")
+console.log("Redis Host:", process.env.REDIS_HOST)
+
+const worker = new Worker(
+  "image-processing",
+  async job => {
+
+    console.log("Processing job:", job.id)
+
+    const data = job.data
+
+    // TODO: image processing logic
+    // background removal / variants
+
+    console.log("Job finished:", job.id)
+
+    return true
+  },
+  { connection }
+)
+
+worker.on("completed", job => {
+  console.log("Job completed:", job.id)
+})
+
+worker.on("failed", (job, err) => {
+  console.log("Job failed:", job?.id, err)
+})
+
+console.log("Worker ready and waiting for jobs...")

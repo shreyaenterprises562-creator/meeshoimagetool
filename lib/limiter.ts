@@ -1,16 +1,19 @@
 import { prisma } from "@/lib/prisma";
 
-export async function useCredit(userId: string) {
+/* ===================================================== */
+/* ✅ DAILY RESET */
+/* ===================================================== */
+
+export async function resetDailyCredits(userId: string) {
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
   });
 
   if (!user) throw new Error("User not found");
 
-  // Premium unlimited
-  if (user.isPremium) return true;
+  if (user.isPremium) return;
 
-  // Reset daily credits if new day
   const today = new Date().toDateString();
   const lastUsed = user.lastUsedAt
     ? new Date(user.lastUsedAt).toDateString()
@@ -26,15 +29,59 @@ export async function useCredit(userId: string) {
       },
     });
   }
+}
 
-  // Check credits
-  if (user.credits <= 0) return false;
+/* ===================================================== */
+/* ✅ USE CREDIT */
+/* ===================================================== */
 
-  // Deduct 1 credit
+export async function useCredit(userId: string) {
+
+  let user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  // Premium unlimited
+  if (user.isPremium) return true;
+
+  /* ================= RESET CHECK ================= */
+
+  const today = new Date().toDateString();
+  const lastUsed = user.lastUsedAt
+    ? new Date(user.lastUsedAt).toDateString()
+    : null;
+
+  if (today !== lastUsed) {
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        credits: 1,
+        adsWatched: 0,
+        lastUsedAt: new Date(),
+      },
+    });
+
+    // reload updated user
+    user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+  }
+
+  /* ================= CREDIT CHECK ================= */
+
+  if (!user || user.credits <= 0) return false;
+
+  /* ================= DEDUCT CREDIT ================= */
+
   await prisma.user.update({
     where: { id: user.id },
     data: {
-      credits: user.credits - 1,
+      credits: {
+        decrement: 1,
+      },
       lastUsedAt: new Date(),
     },
   });

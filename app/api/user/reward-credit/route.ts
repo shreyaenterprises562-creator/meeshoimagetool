@@ -1,12 +1,23 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth"
 
 export async function POST(req: Request) {
+
   try {
-    /* ===================================================== */
-    /* ✅ AUTH CHECK */
-    /* ===================================================== */
+
+    const body = await req.json()
+
+    const { token } = body
+
+    if (token !== process.env.MONETAG_SECRET) {
+      return NextResponse.json(
+        { error: "Invalid reward verification" },
+        { status: 403 }
+      )
+    }
+
+    /* ================= AUTH ================= */
 
     const authHeader = req.headers.get("authorization")
 
@@ -17,8 +28,9 @@ export async function POST(req: Request) {
       )
     }
 
-    const token = authHeader.replace("Bearer ", "")
-    const user = await getCurrentUser(token)
+    const user = await getCurrentUser(
+      authHeader.replace("Bearer ", "")
+    )
 
     if (!user) {
       return NextResponse.json(
@@ -27,52 +39,67 @@ export async function POST(req: Request) {
       )
     }
 
-    /* ===================================================== */
-    /* ✅ PREMIUM USERS DON'T NEED AD CREDITS */
-    /* ===================================================== */
-
     if (user.isPremium) {
       return NextResponse.json({
-        error: "Premium users have unlimited access",
+        error: "Premium users unlimited",
       })
     }
 
-    /* ===================================================== */
-    /* ✅ DAILY LIMIT CHECK (MAX 2) */
-    /* ===================================================== */
+    /* ================= DAILY RESET ================= */
 
-    if (user.adsWatched >= 2) {
-      return NextResponse.json(
-        { error: "Daily ad reward limit reached" },
-        { status: 400 }
-      )
+    const today = new Date().toDateString()
+    const lastUsed = user.lastUsedAt
+      ? new Date(user.lastUsedAt).toDateString()
+      : null
+
+    let adsWatched = user.adsWatched
+
+    if (today !== lastUsed) {
+
+      const reset = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          adsWatched: 0,
+          lastUsedAt: new Date()
+        }
+      })
+
+      adsWatched = reset.adsWatched
     }
 
-    /* ===================================================== */
-    /* ✅ ADD CREDIT */
-    /* ===================================================== */
+    /* ================= LIMIT ================= */
 
-    const updatedUser = await prisma.user.update({
+    if (adsWatched >= 2) {
+      return NextResponse.json({
+        error: "Daily ad limit reached"
+      })
+    }
+
+    /* ================= ADD CREDIT ================= */
+
+    const updated = await prisma.user.update({
       where: { id: user.id },
       data: {
         credits: { increment: 1 },
         adsWatched: { increment: 1 },
-      },
+        lastUsedAt: new Date()
+      }
     })
 
     return NextResponse.json({
       success: true,
-      message: "1 Credit Added 🎉",
-      credits: updatedUser.credits,
-      adsWatched: updatedUser.adsWatched,
+      credits: updated.credits,
+      adsWatched: updated.adsWatched
     })
 
-  } catch (error) {
-    console.error("Reward Credit Error:", error)
+  } catch (err) {
+
+    console.error("Reward Error:", err)
 
     return NextResponse.json(
-      { error: "Failed to add reward credit" },
+      { error: "Reward failed" },
       { status: 500 }
     )
   }
+
 }

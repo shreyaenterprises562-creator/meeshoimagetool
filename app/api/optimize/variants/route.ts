@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { imageQueue } from "@/server/queue/imageQueue"
 
 import { getCurrentUser } from "@/lib/auth"
-import { useCredit } from "@/lib/limiter"
+import { useCredit, resetDailyCredits } from "@/lib/limiter"
 
 export async function POST(req: Request) {
   try {
@@ -27,6 +27,14 @@ export async function POST(req: Request) {
         { success: false, error: "Invalid or expired session" },
         { status: 401 }
       )
+    }
+
+    /* ===================================================== */
+    /* ✅ DAILY CREDIT RESET */
+    /* ===================================================== */
+
+    if (!user.isPremium) {
+      await resetDailyCredits(user.id)
     }
 
     /* ===================================================== */
