@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server"
-import { imageQueue } from "@/server/queue/imageQueue"
+import { optimizeQueue } from "@/lib/queue"
 
 import { getCurrentUser } from "@/lib/auth"
 import { useCredit, resetDailyCredits } from "@/lib/limiter"
 
 export async function POST(req: Request) {
   try {
+
     /* ===================================================== */
     /* ✅ AUTH CHECK */
     /* ===================================================== */
@@ -73,21 +74,21 @@ export async function POST(req: Request) {
     }
 
     /* ===================================================== */
-    /* ✅ CONVERT IMAGE TO BASE64 */
+    /* ✅ IMAGE → BASE64 */
     /* ===================================================== */
 
     const buffer = Buffer.from(await file.arrayBuffer())
-    const base64Image = buffer.toString("base64")
+    const imageBase64 = buffer.toString("base64")
 
     /* ===================================================== */
     /* ✅ ADD JOB TO QUEUE */
     /* ===================================================== */
 
-    const job = await imageQueue.add("process-image", {
-      image: base64Image,
-      variants: variantCount,
-      category,
+    const job = await optimizeQueue.add("generateVariants", {
+      imageBase64,
       userId: user.id,
+      category,
+      variants: variantCount,
     })
 
     /* ===================================================== */
@@ -99,7 +100,9 @@ export async function POST(req: Request) {
       status: "queued",
       jobId: job.id,
     })
+
   } catch (err) {
+
     console.error("Queue Add Error:", err)
 
     return NextResponse.json(
