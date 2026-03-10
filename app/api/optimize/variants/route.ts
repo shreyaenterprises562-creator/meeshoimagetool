@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { optimizeQueue } from "@/lib/queue"
+import { imageQueue } from "@/server/queue/imageQueue"
 
 import { getCurrentUser } from "@/lib/auth"
 import { useCredit, resetDailyCredits } from "@/lib/limiter"
@@ -7,9 +7,7 @@ import { useCredit, resetDailyCredits } from "@/lib/limiter"
 export async function POST(req: Request) {
   try {
 
-    /* ===================================================== */
-    /* ✅ AUTH CHECK */
-    /* ===================================================== */
+    /* ================= AUTH CHECK ================= */
 
     const authHeader = req.headers.get("authorization")
 
@@ -30,17 +28,13 @@ export async function POST(req: Request) {
       )
     }
 
-    /* ===================================================== */
-    /* ✅ DAILY CREDIT RESET */
-    /* ===================================================== */
+    /* ================= DAILY CREDIT RESET ================= */
 
     if (!user.isPremium) {
       await resetDailyCredits(user.id)
     }
 
-    /* ===================================================== */
-    /* ✅ CREDIT CHECK */
-    /* ===================================================== */
+    /* ================= CREDIT CHECK ================= */
 
     if (!user.isPremium) {
       const allowed = await useCredit(user.id)
@@ -56,9 +50,7 @@ export async function POST(req: Request) {
       }
     }
 
-    /* ===================================================== */
-    /* ✅ FORM DATA */
-    /* ===================================================== */
+    /* ================= FORM DATA ================= */
 
     const formData = await req.formData()
 
@@ -73,27 +65,21 @@ export async function POST(req: Request) {
       )
     }
 
-    /* ===================================================== */
-    /* ✅ IMAGE → BASE64 */
-    /* ===================================================== */
+    /* ================= IMAGE → BASE64 ================= */
 
     const buffer = Buffer.from(await file.arrayBuffer())
-    const imageBase64 = buffer.toString("base64")
+    const base64Image = buffer.toString("base64")
 
-    /* ===================================================== */
-    /* ✅ ADD JOB TO QUEUE */
-    /* ===================================================== */
+    /* ================= ADD JOB TO QUEUE ================= */
 
-    const job = await optimizeQueue.add("generateVariants", {
-      imageBase64,
-      userId: user.id,
-      category,
+    const job = await imageQueue.add("process-image", {
+      imageBase64: base64Image,
       variants: variantCount,
+      category,
+      userId: user.id
     })
 
-    /* ===================================================== */
-    /* ✅ RESPONSE */
-    /* ===================================================== */
+    /* ================= RESPONSE ================= */
 
     return NextResponse.json({
       success: true,
