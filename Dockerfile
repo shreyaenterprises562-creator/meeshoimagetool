@@ -32,7 +32,7 @@ chromium \
 && rm -rf /var/lib/apt/lists/*
 
 # install python libs
-RUN pip3 install --no-cache-dir rembg pillow --break-system-packages
+RUN pip3 install --no-cache-dir rembg pillow onnxruntime --break-system-packages
 
 # copy build output
 COPY --from=builder /app/.next ./.next
