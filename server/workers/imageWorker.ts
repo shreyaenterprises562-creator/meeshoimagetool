@@ -1,43 +1,104 @@
 import "dotenv/config"
 import { Worker } from "bullmq"
-import { execFile } from "child_process"
-import { promisify } from "util"
+import sharp from "sharp"
+import fs from "fs"
 import path from "path"
+import { execSync } from "child_process"
 
-const execFileAsync = promisify(execFile)
+console.log("🚀 Image Worker Started")
 
-console.log("Starting Image Optimize Worker...")
+function randomBgColor() {
+  return {
+    r: Math.floor(180 + Math.random() * 75),
+    g: Math.floor(180 + Math.random() * 75),
+    b: Math.floor(180 + Math.random() * 75),
+  }
+}
+
+function randomBorderColor() {
+  return {
+    r: Math.floor(Math.random() * 256),
+    g: Math.floor(Math.random() * 256),
+    b: Math.floor(Math.random() * 256),
+  }
+}
 
 const worker = new Worker(
   "image-optimize",
   async (job) => {
 
-    console.log("Processing job:", job.id)
+    const { imageBase64, variants } = job.data
 
-    const { imageBase64, userId, category, variants } = job.data
+    const inputPath = path.join(process.cwd(), "temp_input.png")
+    const cutPath = path.join(process.cwd(), "temp_cut.png")
 
-    const scriptPath = path.join(process.cwd(), "python", "remove_bg.py")
+    fs.writeFileSync(inputPath, Buffer.from(imageBase64, "base64"))
 
-    try {
+    execSync(`python3 scripts/remove_bg.py ${inputPath} ${cutPath}`)
 
-      const { stdout } = await execFileAsync("python3", [
-        scriptPath,
-        imageBase64,
-        String(variants || 1)
-      ])
+    const cutBuffer = fs.readFileSync(cutPath)
 
-      console.log("Python output received")
+    const results = []
 
-      return {
-        success: true,
-        images: JSON.parse(stdout)
-      }
+    for (let i = 0; i < variants; i++) {
 
-    } catch (err) {
+      const bgColor = randomBgColor()
+      const borderColor = randomBorderColor()
 
-      console.error("Python processing failed:", err)
+      const finalSize = 1024
+      const scaleSize = 620
+      const breathingPadding = 220
+      const internalMargin = 280
+      const borderThickness = 140
 
-      throw err
+      const innerCanvas = await sharp(cutBuffer)
+        .trim({ threshold: 10 })
+        .resize({
+          width: scaleSize,
+          height: scaleSize,
+          fit: "inside"
+        })
+        .extend({
+          top: breathingPadding,
+          bottom: breathingPadding,
+          left: breathingPadding,
+          right: breathingPadding,
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        })
+        .extend({
+          top: internalMargin,
+          bottom: internalMargin,
+          left: internalMargin,
+          right: internalMargin,
+          background: bgColor
+        })
+        .flatten({ background: bgColor })
+        .resize(finalSize, finalSize, { fit: "fill" })
+        .toBuffer()
+
+      const finalBuffer = await sharp(innerCanvas)
+        .extend({
+          top: borderThickness,
+          bottom: borderThickness,
+          left: borderThickness,
+          right: borderThickness,
+          background: borderColor
+        })
+        .resize(finalSize, finalSize, { fit: "cover" })
+        .jpeg({ quality: 95 })
+        .toBuffer()
+
+      results.push(
+        `data:image/jpeg;base64,${finalBuffer.toString("base64")}`
+      )
+    }
+
+    fs.unlinkSync(inputPath)
+    fs.unlinkSync(cutPath)
+
+    return {
+      success: true,
+      variants: results
     }
   },
   {
@@ -49,11 +110,9 @@ const worker = new Worker(
 )
 
 worker.on("completed", (job) => {
-  console.log("Job completed:", job.id)
+  console.log("✅ Job completed:", job.id)
 })
 
 worker.on("failed", (job, err) => {
-  console.error("Job failed:", job?.id, err)
+  console.log("❌ Job failed:", job?.id, err)
 })
-
-console.log("Worker ready and waiting for jobs...")
