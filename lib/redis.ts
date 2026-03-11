@@ -1,12 +1,6 @@
 import IORedis from "ioredis"
 
-const redisUrl = process.env.REDIS_URL
-
-if (!redisUrl) {
-  throw new Error("REDIS_URL is missing in environment variables")
-}
-
-export const redis = new IORedis(redisUrl, {
+export const redis = new IORedis(process.env.REDIS_URL!, {
   maxRetriesPerRequest: null,
   enableReadyCheck: false
 })

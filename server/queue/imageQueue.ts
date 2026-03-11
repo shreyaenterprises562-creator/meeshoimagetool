@@ -1,10 +1,6 @@
 import { Queue } from "bullmq"
+import { redis } from "../../lib/redis"
 
-export const imageQueue = new Queue("image-processing", {
-  connection: {
-    host: process.env.REDIS_HOST,
-    port: Number(process.env.REDIS_PORT),
-    password: process.env.REDIS_PASSWORD,
-    tls: {}
-  }
+export const imageQueue = new Queue("image-optimize", {
+  connection: redis
 })
