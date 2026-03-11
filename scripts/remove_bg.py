@@ -1,21 +1,21 @@
-from rembg import remove
+from rembg import remove, new_session
 from PIL import Image
 import sys
-import io
 
 # arguments
 input_path = sys.argv[1]
 output_path = sys.argv[2]
 
-# read input image
-with open(input_path, "rb") as f:
-    input_data = f.read()
+# use lightweight model (important for low RAM servers)
+session = new_session("u2netp")
+
+# open image
+img = Image.open(input_path).convert("RGBA")
 
 # remove background
-output_data = remove(input_data)
+out = remove(img, session=session)
 
 # save result
-with open(output_path, "wb") as f:
-    f.write(output_data)
+out.save(output_path)
 
 print("DONE")
