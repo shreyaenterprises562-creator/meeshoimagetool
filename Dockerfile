@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# copy project
+# copy full project
 COPY . .
 
 # generate prisma client
@@ -41,10 +41,12 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 
-# 🔴 IMPORTANT (worker files)
+# worker + backend files
 COPY --from=builder /app/server ./server
 
-# environment
+# ✅ IMPORTANT (python scripts)
+COPY --from=builder /app/scripts ./scripts
+
 ENV NODE_ENV=production
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
