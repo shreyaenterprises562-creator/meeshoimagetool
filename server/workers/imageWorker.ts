@@ -7,6 +7,8 @@ import { execSync } from "child_process"
 
 console.log("🚀 Image Worker Started")
 
+/* ---------------- RANDOM COLORS ---------------- */
+
 function randomBgColor() {
   return {
     r: Math.floor(180 + Math.random() * 75),
@@ -23,91 +25,127 @@ function randomBorderColor() {
   }
 }
 
+/* ---------------- WORKER ---------------- */
+
 const worker = new Worker(
   "image-optimize",
   async (job) => {
 
+    console.log("🟢 Processing job:", job.id)
+
     const { imageBase64, variants } = job.data
 
-    const inputPath = path.join(process.cwd(), "temp_input.png")
-    const cutPath = path.join(process.cwd(), "temp_cut.png")
+    const inputPath = path.join(process.cwd(), `temp_input_${job.id}.png`)
+    const cutPath = path.join(process.cwd(), `temp_cut_${job.id}.png`)
 
-    fs.writeFileSync(inputPath, Buffer.from(imageBase64, "base64"))
+    try {
 
-    execSync(`python3 scripts/remove_bg.py ${inputPath} ${cutPath}`)
+      /* ---------------- SAVE INPUT ---------------- */
 
-    const cutBuffer = fs.readFileSync(cutPath)
+      const buffer = Buffer.from(imageBase64, "base64")
+      fs.writeFileSync(inputPath, buffer)
 
-    const results = []
+      /* ---------------- REMOVE BACKGROUND ---------------- */
 
-    for (let i = 0; i < variants; i++) {
+      execSync(`python3 scripts/remove_bg.py ${inputPath} ${cutPath}`, {
+        stdio: "inherit"
+      })
 
-      const bgColor = randomBgColor()
-      const borderColor = randomBorderColor()
+      const cutBuffer = fs.readFileSync(cutPath)
 
-      const finalSize = 1024
-      const scaleSize = 620
-      const breathingPadding = 220
-      const internalMargin = 280
-      const borderThickness = 140
+      const results: string[] = []
 
-      const innerCanvas = await sharp(cutBuffer)
-        .trim({ threshold: 10 })
-        .resize({
-          width: scaleSize,
-          height: scaleSize,
-          fit: "inside"
-        })
-        .extend({
-          top: breathingPadding,
-          bottom: breathingPadding,
-          left: breathingPadding,
-          right: breathingPadding,
-          background: { r: 0, g: 0, b: 0, alpha: 0 }
-        })
-        .extend({
-          top: internalMargin,
-          bottom: internalMargin,
-          left: internalMargin,
-          right: internalMargin,
-          background: bgColor
-        })
-        .flatten({ background: bgColor })
-        .resize(finalSize, finalSize, { fit: "fill" })
-        .toBuffer()
+      /* ---------------- VARIANT GENERATION ---------------- */
 
-      const finalBuffer = await sharp(innerCanvas)
-        .extend({
-          top: borderThickness,
-          bottom: borderThickness,
-          left: borderThickness,
-          right: borderThickness,
-          background: borderColor
-        })
-        .resize(finalSize, finalSize, { fit: "cover" })
-        .jpeg({ quality: 95 })
-        .toBuffer()
+      for (let i = 0; i < variants; i++) {
 
-      results.push(
-        `data:image/jpeg;base64,${finalBuffer.toString("base64")}`
-      )
+        const bgColor = randomBgColor()
+        const borderColor = randomBorderColor()
+
+        const finalSize = 1024
+        const scaleSize = 620
+        const breathingPadding = 220
+        const internalMargin = 280
+        const borderThickness = 140
+
+        const innerCanvas = await sharp(cutBuffer)
+          .trim({ threshold: 10 })
+          .resize({
+            width: scaleSize,
+            height: scaleSize,
+            fit: "inside"
+          })
+          .extend({
+            top: breathingPadding,
+            bottom: breathingPadding,
+            left: breathingPadding,
+            right: breathingPadding,
+            background: { r: 0, g: 0, b: 0, alpha: 0 }
+          })
+          .extend({
+            top: internalMargin,
+            bottom: internalMargin,
+            left: internalMargin,
+            right: internalMargin,
+            background: bgColor
+          })
+          .flatten({ background: bgColor })
+          .resize(finalSize, finalSize, { fit: "fill" })
+          .toBuffer()
+
+        const finalBuffer = await sharp(innerCanvas)
+          .extend({
+            top: borderThickness,
+            bottom: borderThickness,
+            left: borderThickness,
+            right: borderThickness,
+            background: borderColor
+          })
+          .resize(finalSize, finalSize, { fit: "cover" })
+          .jpeg({ quality: 95 })
+          .toBuffer()
+
+        results.push(
+          `data:image/jpeg;base64,${finalBuffer.toString("base64")}`
+        )
+      }
+
+      console.log("✅ Job finished:", job.id)
+
+      return {
+        success: true,
+        variants: results
+      }
+
+    } catch (err) {
+
+      console.error("❌ Worker error:", err)
+      throw err
+
+    } finally {
+
+      /* ---------------- SAFE CLEANUP ---------------- */
+
+      try {
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath)
+      } catch {}
+
+      try {
+        if (fs.existsSync(cutPath)) fs.unlinkSync(cutPath)
+      } catch {}
+
     }
 
-    fs.unlinkSync(inputPath)
-    fs.unlinkSync(cutPath)
-
-    return {
-      success: true,
-      variants: results
-    }
   },
   {
     connection: {
       url: process.env.REDIS_URL
     },
-    concurrency: 5
+    concurrency: 2
   }
 )
+
+/* ---------------- EVENTS ---------------- */
 
 worker.on("completed", (job) => {
   console.log("✅ Job completed:", job.id)
