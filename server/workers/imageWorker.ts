@@ -7,8 +7,6 @@ import { execSync } from "child_process"
 
 console.log("🚀 Image Worker Started")
 
-/* ---------------- RANDOM COLORS ---------------- */
-
 function randomBgColor() {
   return {
     r: Math.floor(180 + Math.random() * 75),
@@ -25,8 +23,6 @@ function randomBorderColor() {
   }
 }
 
-/* ---------------- WORKER ---------------- */
-
 const worker = new Worker(
   "image-optimize",
   async (job) => {
@@ -40,74 +36,54 @@ const worker = new Worker(
 
     try {
 
-      /* ---------------- SAVE INPUT ---------------- */
-
       const buffer = Buffer.from(imageBase64, "base64")
       fs.writeFileSync(inputPath, buffer)
 
-      /* ---------------- REMOVE BACKGROUND ---------------- */
-
-      execSync(`python3 scripts/remove_bg.py ${inputPath} ${cutPath}`, {
-        stdio: "inherit"
-      })
+      execSync(`python3 scripts/remove_bg.py ${inputPath} ${cutPath}`)
 
       const cutBuffer = fs.readFileSync(cutPath)
 
       const results: string[] = []
-
-      /* ---------------- VARIANT GENERATION ---------------- */
 
       for (let i = 0; i < variants; i++) {
 
         const bgColor = randomBgColor()
         const borderColor = randomBorderColor()
 
-        const finalSize = 1024
-        const scaleSize = 620
-        const breathingPadding = 220
-        const internalMargin = 280
-        const borderThickness = 140
-
         const innerCanvas = await sharp(cutBuffer)
           .trim({ threshold: 10 })
-          .resize({
-            width: scaleSize,
-            height: scaleSize,
-            fit: "inside"
-          })
+          .resize({ width: 620, height: 620, fit: "inside" })
           .extend({
-            top: breathingPadding,
-            bottom: breathingPadding,
-            left: breathingPadding,
-            right: breathingPadding,
+            top: 220,
+            bottom: 220,
+            left: 220,
+            right: 220,
             background: { r: 0, g: 0, b: 0, alpha: 0 }
           })
           .extend({
-            top: internalMargin,
-            bottom: internalMargin,
-            left: internalMargin,
-            right: internalMargin,
+            top: 280,
+            bottom: 280,
+            left: 280,
+            right: 280,
             background: bgColor
           })
           .flatten({ background: bgColor })
-          .resize(finalSize, finalSize, { fit: "fill" })
+          .resize(1024, 1024)
           .toBuffer()
 
         const finalBuffer = await sharp(innerCanvas)
           .extend({
-            top: borderThickness,
-            bottom: borderThickness,
-            left: borderThickness,
-            right: borderThickness,
+            top: 140,
+            bottom: 140,
+            left: 140,
+            right: 140,
             background: borderColor
           })
-          .resize(finalSize, finalSize, { fit: "cover" })
+          .resize(1024, 1024)
           .jpeg({ quality: 95 })
           .toBuffer()
 
-        results.push(
-          `data:image/jpeg;base64,${finalBuffer.toString("base64")}`
-        )
+        results.push(`data:image/jpeg;base64,${finalBuffer.toString("base64")}`)
       }
 
       console.log("✅ Job finished:", job.id)
@@ -124,8 +100,6 @@ const worker = new Worker(
 
     } finally {
 
-      /* ---------------- SAFE CLEANUP ---------------- */
-
       try {
         if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath)
       } catch {}
@@ -141,11 +115,13 @@ const worker = new Worker(
     connection: {
       url: process.env.REDIS_URL
     },
-    concurrency: 2
+
+    concurrency: 1,
+
+    lockDuration: 900000, // 15 minutes
+    stalledInterval: 300000
   }
 )
-
-/* ---------------- EVENTS ---------------- */
 
 worker.on("completed", (job) => {
   console.log("✅ Job completed:", job.id)

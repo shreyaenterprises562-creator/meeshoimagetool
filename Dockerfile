@@ -28,11 +28,22 @@ python3 \
 python3-pip \
 python-is-python3 \
 chromium \
+curl \
 --no-install-recommends \
 && rm -rf /var/lib/apt/lists/*
 
+
 # install python libs
 RUN pip3 install --no-cache-dir rembg pillow onnxruntime --break-system-packages
+
+
+# 🔥 PRE-DOWNLOAD REMBG MODEL (VERY IMPORTANT)
+RUN mkdir -p /root/.u2net
+
+RUN curl -L \
+https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx \
+-o /root/.u2net/u2net.onnx
+
 
 # copy build output
 COPY --from=builder /app/.next ./.next
@@ -44,8 +55,9 @@ COPY --from=builder /app/prisma ./prisma
 # worker + backend files
 COPY --from=builder /app/server ./server
 
-# ✅ IMPORTANT (python scripts)
+# python scripts
 COPY --from=builder /app/scripts ./scripts
+
 
 ENV NODE_ENV=production
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
