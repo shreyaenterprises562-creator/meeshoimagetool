@@ -39,13 +39,19 @@ const worker = new Worker(
       const buffer = Buffer.from(imageBase64, "base64")
       fs.writeFileSync(inputPath, buffer)
 
+      console.log("Step 1: Image saved")
+
       execSync(`python3 scripts/remove_bg.py ${inputPath} ${cutPath}`)
+
+      console.log("Step 2: Background removed")
 
       const cutBuffer = fs.readFileSync(cutPath)
 
       const results: string[] = []
 
       for (let i = 0; i < variants; i++) {
+
+        console.log("Generating variant", i)
 
         const bgColor = randomBgColor()
         const borderColor = randomBorderColor()
@@ -118,7 +124,7 @@ const worker = new Worker(
 
     concurrency: 1,
 
-    lockDuration: 900000, // 15 minutes
+    lockDuration: 900000,
     stalledInterval: 300000
   }
 )
