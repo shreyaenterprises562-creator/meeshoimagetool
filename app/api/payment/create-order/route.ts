@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server"
 import Razorpay from "razorpay"
 
@@ -6,109 +5,90 @@ import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { CREDIT_PACKS } from "@/lib/plans"
 
-export async function POST() {
-  return Response.json({
-    disabled: true
-  })
-}
 /*
+ORIGINAL IMPLEMENTATION (KEPT FOR FUTURE)
+
 export async function POST(req: Request) {
-  try {
-    /* ===================================================== */
-    /* ✅ ENV SAFETY CHECK (PREVENT BUILD CRASH) */
-    /* ===================================================== */
+try {
 
-    const keyId = process.env.RAZORPAY_KEY_ID
-    const keySecret = process.env.RAZORPAY_KEY_SECRET
+```
+const keyId = process.env.RAZORPAY_KEY_ID
+const keySecret = process.env.RAZORPAY_KEY_SECRET
 
-    if (!keyId || !keySecret) {
-      return NextResponse.json(
-        { error: "Payment system not configured" },
-        { status: 500 }
-      )
-    }
+if (!keyId || !keySecret) {
+  return NextResponse.json(
+    { error: "Payment system not configured" },
+    { status: 500 }
+  )
+}
 
-    /* ===================================================== */
-    /* ✅ INIT RAZORPAY INSIDE FUNCTION (IMPORTANT) */
-    /* ===================================================== */
+const razorpay = new Razorpay({
+  key_id: keyId,
+  key_secret: keySecret,
+})
 
-    const razorpay = new Razorpay({
-      key_id: keyId,
-      key_secret: keySecret,
-    })
+const authHeader = req.headers.get("authorization")
+if (!authHeader) {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+}
 
-    /* ===================================================== */
-    /* ✅ AUTH */
-    /* ===================================================== */
+const token = authHeader.replace("Bearer ", "")
+const user = await getCurrentUser(token)
 
-    const authHeader = req.headers.get("authorization")
-    if (!authHeader) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+if (!user) {
+  return NextResponse.json({ error: "Invalid session" }, { status: 401 })
+}
 
-    const token = authHeader.replace("Bearer ", "")
-    const user = await getCurrentUser(token)
+const { pack } = await req.json()
+const selectedPack = CREDIT_PACKS[pack as keyof typeof CREDIT_PACKS]
 
-    if (!user) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 })
-    }
+if (!selectedPack) {
+  return NextResponse.json({ error: "Invalid pack" }, { status: 400 })
+}
 
-    /* ===================================================== */
-    /* ✅ PACK VALIDATION */
-    /* ===================================================== */
+const order = await razorpay.orders.create({
+  amount: selectedPack.amount * 100,
+  currency: "INR",
+  receipt: `receipt_${Date.now()}`,
+})
 
-    const { pack } = await req.json()
-    const selectedPack = CREDIT_PACKS[pack as keyof typeof CREDIT_PACKS]
+await prisma.payment.create({
+  data: {
+    userId: user.id,
+    razorpayOrderId: order.id,
+    amount: selectedPack.amount,
+    currency: "INR",
+    status: "created",
+    type: "credits",
+    plan: pack,
+    creditsAdded: selectedPack.credits,
+  },
+})
 
-    if (!selectedPack) {
-      return NextResponse.json({ error: "Invalid pack" }, { status: 400 })
-    }
+return NextResponse.json({
+  success: true,
+  orderId: order.id,
+  key: keyId,
+  amount: selectedPack.amount * 100,
+})
+```
 
-    /* ===================================================== */
-    /* ✅ CREATE ORDER */
-    /* ===================================================== */
+} catch (error) {
+console.error("Create Order Error:", error)
 
-    const order = await razorpay.orders.create({
-      amount: selectedPack.amount * 100,
-      currency: "INR",
-      receipt: `receipt_${Date.now()}`,
-    })
+```
+return NextResponse.json(
+  { error: "Failed to create order" },
+  { status: 500 }
+)
+```
 
-    /* ===================================================== */
-    /* ✅ STORE PAYMENT RECORD */
-    /* ===================================================== */
-
-    await prisma.payment.create({
-      data: {
-        userId: user.id,
-        razorpayOrderId: order.id,
-        amount: selectedPack.amount,
-        currency: "INR",
-        status: "created",
-        type: "credits",
-        plan: pack,
-        creditsAdded: selectedPack.credits,
-      },
-    })
-
-    /* ===================================================== */
-    /* ✅ RESPONSE */
-    /* ===================================================== */
-
-    return NextResponse.json({
-      success: true,
-      orderId: order.id,
-      key: keyId,
-      amount: selectedPack.amount * 100,
-    })
-
-  } catch (error) {
-    console.error("Create Order Error:", error)
-
-    return NextResponse.json(
-      { error: "Failed to create order" },
-      { status: 500 }
-    )
-  }
+}
 }
 */
+
+export async function POST() {
+return Response.json({
+disabled: true
+})
+}
