@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://optaimager.com/sitemap.xml
+Sitemap: https://https://meeshoimagetool-production.up.railway.app//sitemap.xml

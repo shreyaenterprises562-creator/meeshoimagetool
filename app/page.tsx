@@ -28,7 +28,7 @@ export default function HomePage() {
       <header className="w-full px-10 py-6 flex justify-between items-center bg-white shadow-sm">
 
         <h1 className="text-2xl font-bold text-gray-900">
-          🚀 Free Meesho Catalog Image Generator
+          🚀 Optaimager
         </h1>
 
         <div className="flex items-center gap-4">
@@ -65,11 +65,13 @@ export default function HomePage() {
       <section className="text-center py-16 px-6">
 
         <h2 className="text-4xl font-bold text-gray-900 mb-4">
-          Free Meesho Catalog Image Generator
+          Free Meesho Shipping Image Generator
         </h2>
 
-        <p className="text-gray-600 max-w-xl mx-auto">
-          Generate ready-to-upload catalog images instantly.
+        <p className="text-gray-600 max-w-2xl mx-auto">
+          Generate optimized Meesho catalog images that help reduce shipping charges.
+          Upload your product photo and instantly create ready-to-upload ecommerce
+          catalog images for Meesho sellers.
         </p>
 
       </section>
@@ -84,7 +86,7 @@ export default function HomePage() {
 
           <Card
             title="⚡ Catalog Image Generator"
-            desc="Upload product image and generate ready-to-upload ecommerce catalog images."
+            desc="Upload product image and generate ready-to-upload Meesho catalog images instantly."
             link="/optimize"
             button="Generate Images →"
             color="bg-green-600 hover:bg-green-700"
@@ -112,13 +114,13 @@ export default function HomePage() {
 
           <Card
             title="📦 Image History"
-            desc="View your previously generated catalog images."
+            desc="View and download your previously generated catalog images."
             link="/dashboard"
             button="Open Dashboard →"
             color="bg-black hover:bg-gray-800"
           />
 
-          {/* Meesho Automation Disabled */}
+          {/* Automation Disabled */}
 
           <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-4 border relative opacity-70">
 
@@ -127,7 +129,7 @@ export default function HomePage() {
             </h2>
 
             <p className="text-sm text-gray-500 line-through">
-              Connect supplier account for automation.
+              Connect supplier account and automate product image generation.
             </p>
 
             <div className="mt-auto text-center text-sm font-semibold bg-yellow-400 rounded-lg py-2">
@@ -136,14 +138,6 @@ export default function HomePage() {
 
           </div>
 
-          {/* FUTURE FEATURE (COMMENTED) */}
-
-          {/*
-          <div>
-            Connect Meesho API logic saved for future
-          </div>
-          */}
-
         </div>
 
       </main>
@@ -151,7 +145,7 @@ export default function HomePage() {
       {/* ================= FOOTER ================= */}
 
       <footer className="py-6 text-center text-gray-500 text-sm">
-        © {new Date().getFullYear()} Catalog Image Generator
+        © {new Date().getFullYear()} Optaimager — Free Meesho Shipping Image Generator
       </footer>
 
     </div>
