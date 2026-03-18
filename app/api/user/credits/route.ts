@@ -1,3 +1,8 @@
+export async function POST() {
+  return Response.json({
+    disabled: true
+  })
+}
 import { prisma } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
@@ -8,9 +13,9 @@ export async function GET(req: Request) {
     /* ✅ AUTH CHECK */
     /* ===================================================== */
 
-    const authHeader = req.headers.get("authorization")
+  #  const authHeader = req.headers.get("authorization")
 
-    if (!authHeader) {
+   #s if (!authHeader) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }

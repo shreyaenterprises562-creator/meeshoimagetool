@@ -4,15 +4,10 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 
 export default function HomePage() {
+
   const [mounted, setMounted] = useState(false)
   const [token, setToken] = useState<string | null>(null)
-  const [loadingConnect, setLoadingConnect] = useState(false)
-  const [loadingPremium, setLoadingPremium] = useState(false)
-  const [plan, setPlan] = useState("monthly")
 
-  /* ===================================================== */
-  /* ✅ SAFE CLIENT LOAD */
-  /* ===================================================== */
   useEffect(() => {
     setMounted(true)
     setToken(localStorage.getItem("token"))
@@ -20,81 +15,24 @@ export default function HomePage() {
 
   if (!mounted) return null
 
-  /* ===================================================== */
-  /* ✅ LOGOUT */
-  /* ===================================================== */
   const logout = () => {
     localStorage.removeItem("token")
     setToken(null)
   }
 
-  /* ===================================================== */
-  /* ✅ CONNECT MEESHO */
-  /* ===================================================== */
-  const connectMeesho = async () => {
-    if (!token) {
-      alert("❌ Please login first")
-      return
-    }
-
-    try {
-      setLoadingConnect(true)
-
-      const res = await fetch("/api/meesho/connect", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      const data = await res.json()
-      alert(data.message || data.error)
-    } catch {
-      alert("❌ Connect failed")
-    } finally {
-      setLoadingConnect(false)
-    }
-  }
-
-  /* ===================================================== */
-  /* ✅ PREMIUM UPGRADE */
-  /* ===================================================== */
-  const upgradePremium = async () => {
-    if (!token) {
-      alert("❌ Please login first")
-      return
-    }
-
-    try {
-      setLoadingPremium(true)
-
-      const res = await fetch("/api/premium/upgrade", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ plan }),
-      })
-
-      const data = await res.json()
-      alert(data.message || data.error)
-    } catch {
-      alert("❌ Upgrade failed")
-    } finally {
-      setLoadingPremium(false)
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+
       {/* ================= NAVBAR ================= */}
+
       <header className="w-full px-10 py-6 flex justify-between items-center bg-white shadow-sm">
+
         <h1 className="text-2xl font-bold text-gray-900">
-          🚀 Meesho Image Tool
+          🚀 Free Meesho Catalog Image Generator
         </h1>
 
         <div className="flex items-center gap-4">
+
           {!token ? (
             <Link
               href="/login"
@@ -117,80 +55,109 @@ export default function HomePage() {
           >
             Dashboard
           </Link>
+
         </div>
+
       </header>
 
+      {/* ================= HERO ================= */}
+
+      <section className="text-center py-16 px-6">
+
+        <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          Free Meesho Catalog Image Generator
+        </h2>
+
+        <p className="text-gray-600 max-w-xl mx-auto">
+          Generate ready-to-upload catalog images instantly.
+        </p>
+
+      </section>
+
       {/* ================= MAIN ================= */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6">
+
+      <main className="flex-1 flex flex-col items-center px-6 pb-20">
+
         <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
 
-          {/* Optimize */}
+          {/* Catalog Generator */}
+
           <Card
-            title="⚡ Optimize Product Image"
-            desc="Upload product image, generate variants & reduce delivery charges."
+            title="⚡ Catalog Image Generator"
+            desc="Upload product image and generate ready-to-upload ecommerce catalog images."
             link="/optimize"
-            button="Start Optimizing →"
-            color="bg-pink-600 hover:bg-pink-700"
+            button="Generate Images →"
+            color="bg-green-600 hover:bg-green-700"
           />
 
-          {/* Premium */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-4 border">
-            <h2 className="text-xl font-semibold">💎 Premium Plan</h2>
+          {/* Premium Disabled */}
 
-            <select
-              value={plan}
-              onChange={(e) => setPlan(e.target.value)}
-              className="w-full border rounded-xl px-4 py-3 font-semibold"
-            >
-              <option value="weekly">₹49 — 7 Days</option>
-              <option value="monthly">₹179 — Monthly</option>
-              <option value="yearly">₹1499 — Yearly</option>
-              <option value="lifetime">₹7999 — Lifetime</option>
-            </select>
+          <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-4 border relative opacity-70">
 
-            <button
-              onClick={upgradePremium}
-              disabled={loadingPremium}
-              className="mt-auto px-5 py-3 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 disabled:opacity-50"
-            >
-              {loadingPremium ? "Upgrading..." : "Upgrade Premium →"}
-            </button>
+            <h2 className="text-xl font-semibold line-through">
+              💎 Premium Plan
+            </h2>
+
+            <p className="text-sm text-gray-500 line-through">
+              Unlimited images and advanced optimization features.
+            </p>
+
+            <div className="mt-auto text-center text-sm font-semibold bg-yellow-400 rounded-lg py-2">
+              🚧 1 Month Free Soon
+            </div>
+
           </div>
 
-          {/* History */}
+          {/* Dashboard */}
+
           <Card
-            title="📦 Optimization History"
-            desc="View optimized variants & shipping results."
+            title="📦 Image History"
+            desc="View your previously generated catalog images."
             link="/dashboard"
-            button="View Dashboard →"
+            button="Open Dashboard →"
             color="bg-black hover:bg-gray-800"
           />
 
-          {/* Meesho */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-4 border">
-            <h2 className="text-xl font-semibold">🔗 Meesho Automation</h2>
-            <p className="text-sm text-gray-600">
+          {/* Meesho Automation Disabled */}
+
+          <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-4 border relative opacity-70">
+
+            <h2 className="text-xl font-semibold line-through">
+              🔗 Meesho Automation
+            </h2>
+
+            <p className="text-sm text-gray-500 line-through">
               Connect supplier account for automation.
             </p>
 
-            <button
-              onClick={connectMeesho}
-              disabled={loadingConnect}
-              className="mt-auto px-5 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loadingConnect ? "Connecting..." : "Connect Now →"}
-            </button>
+            <div className="mt-auto text-center text-sm font-semibold bg-yellow-400 rounded-lg py-2">
+              🚧 Coming Soon
+            </div>
+
           </div>
+
+          {/* FUTURE FEATURE (COMMENTED) */}
+
+          {/*
+          <div>
+            Connect Meesho API logic saved for future
+          </div>
+          */}
+
         </div>
+
       </main>
 
       {/* ================= FOOTER ================= */}
+
       <footer className="py-6 text-center text-gray-500 text-sm">
-        © {new Date().getFullYear()} Meesho Image Tool ❤️
+        © {new Date().getFullYear()} Catalog Image Generator
       </footer>
+
     </div>
   )
 }
+
 
 /* ================= REUSABLE CARD ================= */
 
@@ -207,16 +174,27 @@ function Card({
   button: string
   color: string
 }) {
+
   return (
+
     <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-4 border">
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <p className="text-gray-600 text-sm">{desc}</p>
+
+      <h2 className="text-xl font-semibold">
+        {title}
+      </h2>
+
+      <p className="text-gray-600 text-sm">
+        {desc}
+      </p>
+
       <Link
         href={link}
         className={`mt-auto px-5 py-3 rounded-xl text-white text-center font-bold transition ${color}`}
       >
         {button}
       </Link>
+
     </div>
+
   )
 }
