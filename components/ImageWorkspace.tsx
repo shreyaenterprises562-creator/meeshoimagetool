@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { UploadCloud } from "lucide-react";
 
 interface Result {
@@ -19,37 +19,7 @@ export default function ImageWorkspace() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Result[]>([]);
 
-  /* ================= FREE MODE (Credits Disabled) ================= */
-
-  // const [credits, setCredits] = useState<number>(0);
-  // const [adsWatched, setAdsWatched] = useState<number>(0);
-
   const fileRef = useRef<HTMLInputElement>(null);
-
-  /* ================= LOAD USER (DISABLED) ================= */
-
-  /*
-  useEffect(() => {
-    async function loadUser() {
-
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      const res = await fetch("/api/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setCredits(data.user.credits);
-        setAdsWatched(data.user.adsWatched);
-      }
-    }
-
-    loadUser();
-  }, []);
-  */
 
   /* ================= IMAGE SELECT ================= */
 
@@ -62,62 +32,6 @@ export default function ImageWorkspace() {
     setPreview(URL.createObjectURL(f));
     setResults([]);
   };
-
-  /* ================================================= */
-  /* 🎥 WATCH AD SYSTEM (DISABLED) */
-  /* ================================================= */
-
-  /*
-  const watchAdAndEarn = async () => {
-
-    try {
-
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Login required!");
-        return;
-      }
-
-      if (adsWatched >= 2) {
-        alert("Daily ad limit reached");
-        return;
-      }
-
-      //@ts-ignore
-      if (window.show_217509) {
-        //@ts-ignore
-        await window.show_217509();
-      } else {
-        alert("Ad loading... try again");
-        return;
-      }
-
-      const res = await fetch("/api/credits/watch-ad", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-
-      if (!data.success) {
-        alert(data.error);
-        return;
-      }
-
-      setCredits(data.credits);
-      setAdsWatched(data.adsWatched);
-
-      alert("✅ +1 Credit Added!");
-
-    } catch {
-
-      alert("Ad failed");
-
-    }
-  };
-  */
 
   /* ================================================= */
   /* GENERATE VARIANTS */
@@ -172,46 +86,6 @@ export default function ImageWorkspace() {
     setLoading(false);
   };
 
-  /* ================================================= */
-  /* SHIPPING OPTIMIZATION (DISABLED FOR NOW) */
-  /* ================================================= */
-
-  /*
-  const startOptimization = async () => {
-
-    if (!file) return;
-
-    setLoading(true);
-    setResults([]);
-
-    try {
-
-      const token = localStorage.getItem("token");
-
-      const formData = new FormData();
-      formData.append("image", file);
-
-      const res = await fetch("/api/optimize/shipping", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-
-      setResults([{ variantId: "SHIP", imageUrl: url }]);
-
-    } catch {
-      alert("Shipping failed");
-    }
-
-    setLoading(false);
-  };
-  */
-
   /* ================= UI ================= */
 
   return (
@@ -226,7 +100,7 @@ export default function ImageWorkspace() {
           <div className="text-center font-bold text-sm text-green-600">
             🎉 FREE MODE ACTIVE
             <p className="text-xs text-gray-400">
-              Unlimited image generation for now
+              Unlimited catalog image generation
             </p>
           </div>
 
@@ -239,7 +113,7 @@ export default function ImageWorkspace() {
             ) : (
               <>
                 <UploadCloud className="w-10 h-10 text-gray-400 mb-2" />
-                <p className="text-gray-500 text-sm">Upload image</p>
+                <p className="text-gray-500 text-sm">Upload product image</p>
               </>
             )}
 
@@ -270,10 +144,10 @@ export default function ImageWorkspace() {
           />
 
           <p className="text-center text-sm">
-            {variantCount} Variants
+            {variantCount} Catalog Images
           </p>
 
-          {/* SHIPPING DISABLED */}
+          {/* SHIPPING FEATURE DISABLED */}
 
           <button
             disabled
@@ -284,7 +158,7 @@ export default function ImageWorkspace() {
             </span>
 
             <span className="absolute right-2 top-2 text-[10px] bg-yellow-400 px-2 py-1 rounded">
-              1 Month Free Soon
+              Coming Soon
             </span>
           </button>
 
@@ -299,7 +173,7 @@ export default function ImageWorkspace() {
                 Generating...
               </span>
             ) : (
-              `Generate ${variantCount} Images`
+              `Generate ${variantCount} Catalog Images`
             )}
           </button>
 
@@ -309,12 +183,12 @@ export default function ImageWorkspace() {
 
           {results.length === 0 ? (
             <div className="h-[350px] flex items-center justify-center text-gray-400">
-              Upload image and optimize
+              Upload image to generate catalog images
             </div>
           ) : (
             <>
               <h3 className="font-semibold mb-4">
-                Generated Variants ({results.length})
+                Generated Images ({results.length})
               </h3>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -331,7 +205,7 @@ export default function ImageWorkspace() {
 
                     <a
                       href={r.imageUrl}
-                      download={`variant-${i}.jpg`}
+                      download={`catalog-${i}.jpg`}
                       className="block text-center bg-black text-white py-2 rounded-lg text-sm hover:bg-gray-800"
                     >
                       ⬇ Download
