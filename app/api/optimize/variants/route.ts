@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server"
 import { imageQueue } from "@/server/queue/imageQueue"
+import { QueueEvents } from "bullmq"
 
 import { getCurrentUser } from "@/lib/auth"
 import { useCredit, resetDailyCredits } from "@/lib/limiter"
 
+const queueEvents = new QueueEvents("image-optimize", {
+  connection: {
+    url: process.env.REDIS_URL
+  }
+})
+
 export async function POST(req: Request) {
   try {
+
+    await queueEvents.waitUntilReady()
 
     /* ================= AUTH CHECK ================= */
 
@@ -70,7 +79,7 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(await file.arrayBuffer())
     const base64Image = buffer.toString("base64")
 
-    /* ================= ADD JOB TO QUEUE ================= */
+    /* ================= ADD JOB ================= */
 
     const job = await imageQueue.add("process-image", {
       imageBase64: base64Image,
@@ -79,20 +88,21 @@ export async function POST(req: Request) {
       userId: user.id
     })
 
-    /* ================= RESPONSE ================= */
+    /* ================= WAIT FOR RESULT ================= */
+
+    const result = await job.waitUntilFinished(queueEvents)
 
     return NextResponse.json({
       success: true,
-      status: "queued",
-      jobId: job.id,
+      variants: result?.variants || []
     })
 
   } catch (err) {
 
-    console.error("Queue Add Error:", err)
+    console.error("Optimize API Error:", err)
 
     return NextResponse.json(
-      { success: false, error: "Failed to queue job" },
+      { success: false, error: "Optimization failed" },
       { status: 500 }
     )
   }

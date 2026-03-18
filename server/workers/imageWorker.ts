@@ -94,10 +94,9 @@ const worker = new Worker(
 
       console.log("✅ Job finished:", job.id)
 
-      return {
-        success: true,
-        variants: results
-      }
+  return {
+  variants: results
+}
 
     } catch (err) {
 
