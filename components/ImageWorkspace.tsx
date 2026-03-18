@@ -14,16 +14,21 @@ export default function ImageWorkspace() {
   const [preview, setPreview] = useState<string | null>(null);
 
   const [variantCount, setVariantCount] = useState(5);
+  const [category, setCategory] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Result[]>([]);
 
-  const [credits, setCredits] = useState<number>(0);
-  const [adsWatched, setAdsWatched] = useState<number>(0);
+  /* ================= FREE MODE (Credits Disabled) ================= */
+
+  // const [credits, setCredits] = useState<number>(0);
+  // const [adsWatched, setAdsWatched] = useState<number>(0);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
-  /* ================= LOAD USER ================= */
+  /* ================= LOAD USER (DISABLED) ================= */
 
+  /*
   useEffect(() => {
     async function loadUser() {
 
@@ -44,6 +49,7 @@ export default function ImageWorkspace() {
 
     loadUser();
   }, []);
+  */
 
   /* ================= IMAGE SELECT ================= */
 
@@ -58,9 +64,10 @@ export default function ImageWorkspace() {
   };
 
   /* ================================================= */
-  /* 🎥 WATCH AD & EARN CREDIT */
+  /* 🎥 WATCH AD SYSTEM (DISABLED) */
   /* ================================================= */
 
+  /*
   const watchAdAndEarn = async () => {
 
     try {
@@ -76,8 +83,6 @@ export default function ImageWorkspace() {
         return;
       }
 
-      /* Monetag Ad Trigger */
-
       //@ts-ignore
       if (window.show_217509) {
         //@ts-ignore
@@ -86,8 +91,6 @@ export default function ImageWorkspace() {
         alert("Ad loading... try again");
         return;
       }
-
-      /* Reward Credit */
 
       const res = await fetch("/api/credits/watch-ad", {
         method: "POST",
@@ -114,6 +117,7 @@ export default function ImageWorkspace() {
 
     }
   };
+  */
 
   /* ================================================= */
   /* GENERATE VARIANTS */
@@ -123,11 +127,6 @@ export default function ImageWorkspace() {
 
     if (!file) {
       alert("Upload image first!");
-      return;
-    }
-
-    if (credits <= 0) {
-      alert("⚠️ No credits left! Watch Ad first.");
       return;
     }
 
@@ -141,6 +140,7 @@ export default function ImageWorkspace() {
       const formData = new FormData();
       formData.append("image", file);
       formData.append("variants", variantCount.toString());
+      formData.append("category", category);
 
       const res = await fetch("/api/optimize/variants", {
         method: "POST",
@@ -158,8 +158,6 @@ export default function ImageWorkspace() {
         return;
       }
 
-      setCredits((prev) => prev - 1);
-
       setResults(
         data.variants.map((img: string, i: number) => ({
           variantId: `OPT-${i + 1}`,
@@ -175,17 +173,13 @@ export default function ImageWorkspace() {
   };
 
   /* ================================================= */
-  /* SHIPPING OPTIMIZATION */
+  /* SHIPPING OPTIMIZATION (DISABLED FOR NOW) */
   /* ================================================= */
 
+  /*
   const startOptimization = async () => {
 
     if (!file) return;
-
-    if (credits <= 0) {
-      alert("⚠️ No credits left! Watch Ad first.");
-      return;
-    }
 
     setLoading(true);
     setResults([]);
@@ -208,8 +202,6 @@ export default function ImageWorkspace() {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
 
-      setCredits((prev) => prev - 1);
-
       setResults([{ variantId: "SHIP", imageUrl: url }]);
 
     } catch {
@@ -218,6 +210,7 @@ export default function ImageWorkspace() {
 
     setLoading(false);
   };
+  */
 
   /* ================= UI ================= */
 
@@ -228,23 +221,14 @@ export default function ImageWorkspace() {
 
         <div className="bg-white border rounded-2xl p-6 space-y-6 shadow-sm">
 
-          <div className="text-center font-bold text-sm">
-            🎯 Credits Left: {credits}
+          {/* FREE MODE BANNER */}
+
+          <div className="text-center font-bold text-sm text-green-600">
+            🎉 FREE MODE ACTIVE
             <p className="text-xs text-gray-400">
-              Ads Watched: {adsWatched}/2
+              Unlimited image generation for now
             </p>
           </div>
-
-          {/* WATCH AD BUTTON */}
-
-          {credits <= 0 && adsWatched < 2 && (
-            <button
-              onClick={watchAdAndEarn}
-              className="w-full bg-yellow-400 hover:bg-yellow-500 font-bold py-3 rounded-xl"
-            >
-              🎥 Watch Ad & Earn +1 Credit
-            </button>
-          )}
 
           <div
             onClick={() => fileRef.current?.click()}
@@ -269,6 +253,14 @@ export default function ImageWorkspace() {
           </div>
 
           <input
+            type="text"
+            placeholder="Category (optional)"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+          />
+
+          <input
             type="range"
             min={1}
             max={50}
@@ -281,12 +273,19 @@ export default function ImageWorkspace() {
             {variantCount} Variants
           </p>
 
+          {/* SHIPPING DISABLED */}
+
           <button
-            onClick={startOptimization}
-            disabled={!file || loading}
-            className="w-full bg-pink-600 text-white py-3 rounded-xl"
+            disabled
+            className="w-full bg-gray-300 text-gray-600 py-3 rounded-xl cursor-not-allowed relative"
           >
-            {loading ? "Processing..." : "CALCULATE BEST SHIPPING"}
+            <span className="line-through">
+              CALCULATE BEST SHIPPING
+            </span>
+
+            <span className="absolute right-2 top-2 text-[10px] bg-yellow-400 px-2 py-1 rounded">
+              1 Month Free Soon
+            </span>
           </button>
 
           <button
@@ -294,9 +293,14 @@ export default function ImageWorkspace() {
             disabled={!file || loading}
             className="w-full bg-green-600 text-white py-3 rounded-xl"
           >
-            {loading
-              ? "Generating..."
-              : `Generate ${variantCount} Images`}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                Generating...
+              </span>
+            ) : (
+              `Generate ${variantCount} Images`
+            )}
           </button>
 
         </div>
@@ -308,16 +312,36 @@ export default function ImageWorkspace() {
               Upload image and optimize
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {results.map((r, i) => (
-                <div key={r.variantId}>
-                  <img src={r.imageUrl} />
-                  <a href={r.imageUrl} download={`variant-${i}.jpg`}>
-                    Download
-                  </a>
-                </div>
-              ))}
-            </div>
+            <>
+              <h3 className="font-semibold mb-4">
+                Generated Variants ({results.length})
+              </h3>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+
+                {results.map((r, i) => (
+                  <div
+                    key={r.variantId}
+                    className="border rounded-xl p-2 bg-gray-50"
+                  >
+                    <img
+                      src={r.imageUrl}
+                      className="rounded-lg mb-2"
+                    />
+
+                    <a
+                      href={r.imageUrl}
+                      download={`variant-${i}.jpg`}
+                      className="block text-center bg-black text-white py-2 rounded-lg text-sm hover:bg-gray-800"
+                    >
+                      ⬇ Download
+                    </a>
+
+                  </div>
+                ))}
+
+              </div>
+            </>
           )}
 
         </div>

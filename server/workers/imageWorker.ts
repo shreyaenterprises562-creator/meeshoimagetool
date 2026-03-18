@@ -94,10 +94,9 @@ const worker = new Worker(
 
       console.log("✅ Job finished:", job.id)
 
-      return {
-        success: true,
-        variants: results
-      }
+  return {
+  variants: results
+}
 
     } catch (err) {
 
@@ -122,7 +121,7 @@ const worker = new Worker(
       url: process.env.REDIS_URL
     },
 
-    concurrency: 1,
+    concurrency: 2,
 
     lockDuration: 900000,
     stalledInterval: 300000

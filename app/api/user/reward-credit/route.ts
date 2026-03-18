@@ -1,3 +1,8 @@
+export async function POST() {
+  return Response.json({
+    disabled: true
+  })
+}
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth"
