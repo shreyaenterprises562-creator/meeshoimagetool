@@ -1,8 +1,4 @@
-export async function POST() {
-  return Response.json({
-    disabled: true
-  })
-}
+
 import { NextResponse } from "next/server"
 import Razorpay from "razorpay"
 
@@ -10,6 +6,12 @@ import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { CREDIT_PACKS } from "@/lib/plans"
 
+export async function POST() {
+  return Response.json({
+    disabled: true
+  })
+}
+/*
 export async function POST(req: Request) {
   try {
     /* ===================================================== */
@@ -109,3 +111,4 @@ export async function POST(req: Request) {
     )
   }
 }
+/*

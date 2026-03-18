@@ -1,11 +1,13 @@
+
+import { prisma } from "@/lib/db";
+import { verifyToken } from "@/lib/auth";
+
 export async function POST() {
   return Response.json({
     disabled: true
   })
 }
-import { prisma } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
-
+/*
 /* ===================================================== */
 /* ✅ PREMIUM UPGRADE API */
 /* Plans:
@@ -111,3 +113,4 @@ export async function POST(req: Request) {
     );
   }
 }
+/*

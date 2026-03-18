@@ -1,12 +1,14 @@
+
+import { NextResponse } from "next/server"
+import crypto from "crypto"
+import { prisma } from "@/lib/db"
+
 export async function POST() {
   return Response.json({
     disabled: true
   })
 }
-import { NextResponse } from "next/server"
-import crypto from "crypto"
-import { prisma } from "@/lib/db"
-
+/*
 export async function POST(req: Request) {
   const body = await req.json()
 
@@ -55,3 +57,4 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ success: true })
 }
+/*

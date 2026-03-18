@@ -1,12 +1,15 @@
-export async function POST() {
-  return Response.json({
-    disabled: true
-  })
-}
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 
+
+export async function POST() {
+  return NextResponse.json({
+    disabled: true
+  });
+}
+/*
 export async function POST(req: Request) {
   try {
     /* ===================================================== */
@@ -107,4 +110,5 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+/*
 }

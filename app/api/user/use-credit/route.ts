@@ -1,12 +1,14 @@
+
+import { prisma } from "@/lib/db"
+import { NextResponse } from "next/server"
+import { getCurrentUser } from "@/lib/auth"
+
 export async function POST() {
   return Response.json({
     disabled: true
   })
 }
-import { prisma } from "@/lib/db"
-import { NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/auth"
-
+/*
 export async function POST(req: Request) {
   try {
     /* ===================================================== */
@@ -80,3 +82,4 @@ export async function POST(req: Request) {
     )
   }
 }
+/*
